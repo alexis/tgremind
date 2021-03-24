@@ -39,10 +39,10 @@ def remember_chats(current_chats)
 end
 
 def get_chats
-  res = JSON.parse(Typhoeus.get(api_endpoint(:getUpdates)).body)
+  json = JSON.parse(Typhoeus.get(api_endpoint(:getUpdates)).body)
 
   discovered_chats =
-    res['result'].map{ |x| x.values.map{ |y| y.respond_to?(:dig) ? y.dig('chat', 'id') : nil} }.flatten.uniq.compact
+    json['result'].map{ |x| x.values.map{ |y| y.is_a?(Hash) ? y.dig('chat', 'id') : nil} }.flatten.uniq.compact
 
   remember_chats(discovered_chats)
 end
@@ -76,11 +76,12 @@ while true
   this_time = Time.current
 
   each_parsed_reminder do |chat_id, msg, event_time, event_name|
-    rem1 = event_time - 15.minutes
-    rem2 = event_time.beginning_of_day - 4.hours
-    LOGGER.info "Will notify #{chat_id.to_s.green} about #{event_name.bold} in: #{ [rem2, rem1].map{ |x| '%.2fh' % ((x - this_time)/3600) }.join(', ') }"
-    send_notifications(msg, ids: [chat_id]) if last_time < rem2 and this_time > rem2
-    send_notifications(msg, ids: [chat_id]) if last_time < rem1 and this_time > rem1
+    hours_until = []
+    [event_time - 15.minutes, event_time.beginning_of_day - 4.hours].each do |remind_at|
+      send_notifications(msg, ids: [chat_id]) if last_time < remind_at and this_time > remind_at
+      hours_until << '%.2fh' % ((remind_at - this_time) / 3600)
+    end
+    LOGGER.info "Remind #{chat_id.to_s.green} about #{event_name.bold} in: #{ hours_until.join(', ') }"
   end
 
   last_time = this_time
