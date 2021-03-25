@@ -40,10 +40,8 @@ end
 
 def get_chats
   json = JSON.parse(Typhoeus.get(api_endpoint(:getUpdates)).body)
-
   discovered_chats =
     json['result'].map{ |x| x.values.map{ |y| y.is_a?(Hash) ? y.dig('chat', 'id') : nil} }.flatten.uniq.compact
-
   remember_chats(discovered_chats)
 end
 
@@ -55,7 +53,7 @@ def each_parsed_reminder
 
     descr.scan(%r{^(REMINDER: *(.*) // (.*))}) do |match|
       whole_string, datetime_str, descr = *match
-      yield chat_id, whole_string, Chronic.parse(datetime_str, context: :future), descr[/^[^@]*/].squish
+      yield chat_id, whole_string, Chronic.parse(datetime_str, now: Time.current - 1.day), descr[/^[^@]*/].squish
     end
   end
 end
