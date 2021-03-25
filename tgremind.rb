@@ -27,7 +27,6 @@ def send_notifications(msg, ids: nil)
     LOGGER.info "Sending message to #{chat_id.to_s.green}: #{msg.bold}"
     Typhoeus.post(api_endpoint(:sendMessage), body: {
       chat_id: chat_id,
-      parse_mode: 'markdown',
       text: msg
     })
   end
