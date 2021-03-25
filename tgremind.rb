@@ -7,7 +7,6 @@ Bundler.require(:default)
 DELAY = 60
 API_TOKEN = ENV['API_TOKEN']
 LOGGER = Logger.new(STDOUT, level: ENV['DEBUG'] ? :debug : :info)
-SILENT_START = ENV['SILENT_START']
 
 fail('Error: API_TOKEN environment variable required') if API_TOKEN.blank?
 String.disable_colorization(true) unless STDOUT.isatty
@@ -20,7 +19,7 @@ def api_endpoint(action)
 end
 
 def send_notifications(msg, ids: nil)
-  LOGGER.debug "Message to send: #{msg.bold}"
+  LOGGER.debug "Message: #{msg.bold}"
   return if ENV['DRYRUN']
 
   ids ||= get_chats
@@ -57,17 +56,6 @@ def each_parsed_reminder
     end
   end
 end
-
-def shut_down
-  Thread.new {
-    send_notifications("Reminders is OFF")
-    exit
-  }
-end
-Signal.trap("INT")  { shut_down }
-Signal.trap("TERM") { shut_down }
-
-send_notifications("Reminders is ON") unless SILENT_START
 
 last_time = Time.current
 while true
