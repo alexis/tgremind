@@ -6,6 +6,7 @@ Bundler.require(:default)
 
 DELAY = 60
 API_TOKEN = ENV['API_TOKEN']
+CHATS = ENV['CHATS']
 LOGGER = Logger.new(STDOUT, level: ENV['DEBUG'] ? :debug : :info)
 
 fail('Error: API_TOKEN environment variable required') if API_TOKEN.blank?
@@ -32,15 +33,16 @@ def send_notifications(msg, ids: nil)
   end
 end
 
-def remember_chats(current_chats)
+def all_chats(current_chats)
+  @chats ||= CHATS.split(',')
   @chats = [*@chats, *current_chats].uniq
 end
 
 def get_chats
   json = JSON.parse(Typhoeus.get(api_endpoint(:getUpdates)).body)
   discovered_chats =
-    json['result'].map{ |x| x.values.map{ |y| y.is_a?(Hash) ? y.dig('chat', 'id') : nil} }.flatten.uniq.compact
-  remember_chats(discovered_chats)
+    (json['result'] || []).map{ |x| x.values.map{ |y| y.is_a?(Hash) ? y.dig('chat', 'id') : nil } }.flatten.uniq.compact
+  all_chats(discovered_chats)
 end
 
 def each_parsed_reminder
@@ -55,6 +57,8 @@ def each_parsed_reminder
     end
   end
 end
+
+fail 'No chats found' unless get_chats.present?
 
 last_time = Time.current
 while true
