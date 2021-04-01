@@ -34,7 +34,7 @@ def send_notifications(msg, ids: nil)
 end
 
 def all_chats(current_chats)
-  @chats ||= CHATS.split(',')
+  @chats ||= CHATS.to_s.split(',').map{ |x| Integer(x, exception: false) }.compact
   @chats = [*@chats, *current_chats].uniq
 end
 
@@ -66,11 +66,11 @@ while true
 
   each_parsed_reminder do |chat_id, msg, event_time, event_name|
     hours_until = []
+    LOGGER.info "Remind #{chat_id.to_s.green} about #{event_name.bold} in: #{hours_until.join(', ')}"
     [event_time - 15.minutes, event_time.beginning_of_day - 4.hours].each do |remind_at|
-      send_notifications(msg, ids: [chat_id]) if last_time < remind_at and this_time > remind_at
+      send_notifications(msg, ids: [chat_id]) if last_time < remind_at and this_time >= remind_at
       hours_until << '%.2fh' % ((remind_at - this_time) / 3600)
     end
-    LOGGER.info "Remind #{chat_id.to_s.green} about #{event_name.bold} in: #{ hours_until.join(', ') }"
   end
 
   last_time = this_time
