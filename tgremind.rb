@@ -66,7 +66,7 @@ while true
 
   each_parsed_reminder do |chat_id, msg, event_time, event_name|
     hours_until = []
-    [event_time - 15.minutes, event_time.beginning_of_day - 4.hours].each do |remind_at|
+    [event_time - 5.minutes, event_time.beginning_of_day - 4.hours].each do |remind_at|
       send_notifications(msg, ids: [chat_id]) if last_time < remind_at and this_time >= remind_at
       hours_until << '%.2fh' % ((remind_at - this_time) / 3600)
     end
